@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import 'bottle_painter.dart';
@@ -9,12 +11,18 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   double initialQuantity = 0;
+  late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200), // Durée de l'animation
+    );
   }
 
   @override
@@ -43,6 +51,11 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: initialQuantity < 0.95
           ? FloatingActionButton.extended(
               onPressed: () {
+                if (_animationController.status == AnimationStatus.completed) {
+                  _animationController.reverse();
+                } else {
+                  _animationController.forward();
+                }
                 if (initialQuantity <= 0.95) {
                   setState(() {
                     initialQuantity += 0.1;
@@ -75,13 +88,23 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            CustomPaint(
-              size: const Size(
-                200,
-                500,
-              ),
-              painter: BottlePainter(initialQuantity),
-            ),
+            AnimatedBuilder(
+                animation: _animationController,
+                builder: (BuildContext context, Widget? child) {
+                  final sineValue =
+                      sin(3 * 2 * pi * _animationController.value);
+                  return Transform.translate(
+                    offset: Offset(sineValue * 10, 0),
+                    child: child,
+                  );
+                },
+                child: CustomPaint(
+                  size: const Size(
+                    200,
+                    500,
+                  ),
+                  painter: BottlePainter(initialQuantity),
+                )),
             Positioned(
                 top: 0,
                 child: Container(
@@ -114,5 +137,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _animationController
+        .dispose(); // N'oubliez pas de disposer de l'animation controller.
+    super.dispose();
   }
 }
